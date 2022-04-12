@@ -33,6 +33,11 @@ namespace UdonMaestro_BackEnd.Data.Model {
         public decimal Lon { get; set; }
 
         /// <summary>
+        /// 郵便番号
+        /// </summary>
+        public string PostCode { get; set; } = null!;
+
+        /// <summary>
         /// 市ID
         /// </summary>
         [ForeignKey(nameof(City))]
