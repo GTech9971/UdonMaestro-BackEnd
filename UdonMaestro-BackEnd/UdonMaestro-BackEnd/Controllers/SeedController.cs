@@ -1,53 +1,49 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security;
 using System.Text;
 using UdonMaestro_BackEnd.Data;
 using UdonMaestro_BackEnd.Data.Model;
-using System.Linq;
+using UdonMaestro_BackEnd.Service;
 
-namespace UdonMaestro_BackEnd.Controllers
-{
+namespace UdonMaestro_BackEnd.Controllers {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class SeedController : ControllerBase    {
+    public class SeedController : ControllerBase {
 
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _env;
 
-        public SeedController(ApplicationDbContext context, IWebHostEnvironment env){
+        public SeedController(ApplicationDbContext context, IWebHostEnvironment env) {
             this._context = context;
             this._env = env;
         }
 
         [HttpGet]
-        public async Task<ActionResult> Import(){
-            if(_env.IsDevelopment() == false) {
+        public async Task<ActionResult> Import() {
+            if (_env.IsDevelopment() == false) {
                 throw new SecurityException("Not allowed");
             }
 
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            //Encoding ENC = Encoding.GetEncoding("Shift_JIS");
             Encoding ENC = Encoding.GetEncoding("UTF-8");
 
             var path = Path.Combine(_env.ContentRootPath, "Data/Source/37kagawa.csv");
-            using(var stream = new StreamReader(path, ENC)) {
+            using (var stream = new StreamReader(path, ENC)) {
                 const char SPLIT = ',';
 
                 //県
                 await stream.ReadLineAsync();
                 int numberOfProvinceAdd = 0;
                 string line = null;
-                while((line = await stream.ReadLineAsync()) != null) {
+                while ((line = await stream.ReadLineAsync()) != null) {
                     line = line.Replace("\"", "");
                     string[] contexts = line.Split(SPLIT);
-                    
+
                     var provincdId = int.Parse(contexts[1]);
                     var provinceName = contexts[7];
 
 
-                    var province = new Province(){
+                    var province = new Province() {
                         Id = provincdId,
                         Name = provinceName
                     };
@@ -58,7 +54,7 @@ namespace UdonMaestro_BackEnd.Controllers
                     break;
                 }
 
-                if(numberOfProvinceAdd > 0) {
+                if (numberOfProvinceAdd > 0) {
                     await this._context.SaveChangesAsync();
                 }
 
@@ -69,7 +65,7 @@ namespace UdonMaestro_BackEnd.Controllers
                 stream.BaseStream.Position = 0;
                 await stream.ReadLineAsync();
                 var citiesByName = _context.Cities.AsNoTracking().ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
-                while((line = await stream.ReadLineAsync()) != null) {
+                while ((line = await stream.ReadLineAsync()) != null) {
                     line = line.Replace("\"", "");
                     string[] contexts = line.Split(SPLIT);
 
@@ -91,7 +87,7 @@ namespace UdonMaestro_BackEnd.Controllers
                     numbeOfCityAdd++;
                 }
 
-                if(numbeOfCityAdd > 0) {
+                if (numbeOfCityAdd > 0) {
                     await _context.SaveChangesAsync();
                 }
 
@@ -100,9 +96,10 @@ namespace UdonMaestro_BackEnd.Controllers
                 int numberOfTownAdd = 0;
                 var townsByName = _context.Towns.AsNoTracking().ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
                 line = null;
+                GeoService geoService = new GeoService();
                 stream.BaseStream.Position = 0;
                 await stream.ReadLineAsync();
-                while((line = await stream.ReadLineAsync()) != null) {
+                while ((line = await stream.ReadLineAsync()) != null) {
                     line = line.Replace("\"", "");
                     string[] contexts = line.Split(SPLIT);
 
@@ -116,7 +113,7 @@ namespace UdonMaestro_BackEnd.Controllers
                     }
 
                     var city = await _context.Cities.Where(x => x.Id == cityId).FirstOrDefaultAsync();
-                    if(city == null) {
+                    if (city == null) {
                         continue;
                     }
                     var town = new Town() {
@@ -127,9 +124,16 @@ namespace UdonMaestro_BackEnd.Controllers
                         PostCode = postCode
                     };
 
-                    if(townsByName.ContainsKey(townName) ) {
+                    if (townsByName.ContainsKey(townName)) {
                         continue;
                     }
+
+                    var geoInfo = await geoService.GetGeoByPostCodeAsync(town.PostCode);
+                    if (geoInfo != null) {
+                        town.Lat = geoInfo.Item1;
+                        town.Lon = geoInfo.Item2;
+                    }
+
 
                     await _context.Towns.AddAsync(town);
                     townsByName.Add(townName, town);
