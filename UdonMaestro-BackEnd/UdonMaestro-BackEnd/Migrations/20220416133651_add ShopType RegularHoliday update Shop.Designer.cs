@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using UdonMaestro_BackEnd.Data;
@@ -11,9 +12,10 @@ using UdonMaestro_BackEnd.Data;
 namespace UdonMaestro_BackEnd.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220416133651_add ShopType RegularHoliday update Shop")]
+    partial class addShopTypeRegularHolidayupdateShop
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -115,9 +117,14 @@ namespace UdonMaestro_BackEnd.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("ShopId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("ShopId");
 
                     b.ToTable("RegularHolidays");
                 });
@@ -176,29 +183,6 @@ namespace UdonMaestro_BackEnd.Migrations
                     b.HasIndex("ShopTypeId");
 
                     b.ToTable("Shops");
-                });
-
-            modelBuilder.Entity("UdonMaestro_BackEnd.Data.Model.ShopRegularHoliday", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("RegularHolidayId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ShopId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RegularHolidayId");
-
-                    b.HasIndex("ShopId");
-
-                    b.ToTable("ShopRegularHoliday");
                 });
 
             modelBuilder.Entity("UdonMaestro_BackEnd.Data.Model.ShopType", b =>
@@ -280,6 +264,13 @@ namespace UdonMaestro_BackEnd.Migrations
                     b.Navigation("Province");
                 });
 
+            modelBuilder.Entity("UdonMaestro_BackEnd.Data.Model.RegularHoliday", b =>
+                {
+                    b.HasOne("UdonMaestro_BackEnd.Data.Model.Shop", null)
+                        .WithMany("RegularHolidays")
+                        .HasForeignKey("ShopId");
+                });
+
             modelBuilder.Entity("UdonMaestro_BackEnd.Data.Model.Shop", b =>
                 {
                     b.HasOne("UdonMaestro_BackEnd.Data.Model.Address", "Address")
@@ -297,25 +288,6 @@ namespace UdonMaestro_BackEnd.Migrations
                     b.Navigation("Address");
 
                     b.Navigation("ShopType");
-                });
-
-            modelBuilder.Entity("UdonMaestro_BackEnd.Data.Model.ShopRegularHoliday", b =>
-                {
-                    b.HasOne("UdonMaestro_BackEnd.Data.Model.RegularHoliday", "RegularHoliday")
-                        .WithMany()
-                        .HasForeignKey("RegularHolidayId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("UdonMaestro_BackEnd.Data.Model.Shop", "Shop")
-                        .WithMany("RegularHolidays")
-                        .HasForeignKey("ShopId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RegularHoliday");
-
-                    b.Navigation("Shop");
                 });
 
             modelBuilder.Entity("UdonMaestro_BackEnd.Data.Model.Town", b =>

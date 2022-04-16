@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using UdonMaestro_BackEnd.Data;
 using UdonMaestro_BackEnd.Data.Model;
 using UdonMaestro_BackEnd.Service;
@@ -39,6 +41,47 @@ namespace UdonMaestro_BackEnd.Controllers {
             return geo;
         }
 
+        /// <summary>
+        /// 2点間の緯度経度から距離を取得する
+        /// 何も設定しなければ高松、坂出の距離を取得する
+        /// </summary>
+        /// <param name="lat1"></param>
+        /// <param name="lon1"></param>
+        /// <param name="lat2"></param>
+        /// <param name="lon2"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public double GetDistance(decimal lat1 = (decimal)34.34028, decimal lon1 = (decimal)134.04333, decimal lat2 = (decimal)34.314202, decimal lon2 = (decimal)133.882861) {
+            return geoService.CalcDistcance(lat1, lon1, lat2, lon2);
+        }
+
+
+        /// <summary>
+        /// 入力された緯度経度付近10kmの町・群のリストを返す
+        /// </summary>
+        /// <param name="lat">緯度</param>
+        /// <param name="lon">経度</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<ActionResult<List<Town>>> GetTownsAround10Km(decimal lat, decimal lon) {
+            if (lat == 0 || lon == 0) {
+                return BadRequest($"有効な緯度経度を入力してください。 緯度:{lat} 経度:{lon}");
+            }
+
+            List<Town> list = new List<Town>();
+            var towns = await _context.Towns.ToListAsync();
+            towns.ForEach(town => {
+                if (town.Lat != 0 && town.Lon != 0) {
+                    double distance = geoService.CalcDistcance(lat, lon, town.Lat, town.Lon);
+                    Debug.WriteLine(distance);
+                    if (distance < 10) {
+                        list.Add(town);
+                    }
+                }
+            });
+
+            return list;
+        }
 
     }
 }

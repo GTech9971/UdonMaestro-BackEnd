@@ -19,6 +19,11 @@ namespace UdonMaestro_BackEnd.Controllers {
             this._env = env;
         }
 
+        /// <summary>
+        /// 香川県のデータを設定する
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="SecurityException"></exception>
         [HttpGet]
         public async Task<ActionResult> Import() {
             if (_env.IsDevelopment() == false) {
@@ -151,6 +156,64 @@ namespace UdonMaestro_BackEnd.Controllers {
                     Towns = numberOfTownAdd
                 });
             }
+        }
+
+        /// <summary>
+        /// アプリのコードマスタデータを設定する
+        /// 店のタイプ、定休日
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<ActionResult> ImportMaster() {
+            if(_env.IsDevelopment() == false) {
+                throw new SecurityException("Not allowed");
+            }
+
+            //店舗の種類を追加
+            List<ShopType> shopTypes = new List<ShopType>();
+            shopTypes.Add(new ShopType() { Id = 1, Name = "一般店" });
+            shopTypes.Add(new ShopType() { Id = 2, Name = "セルフ" });
+            shopTypes.Add(new ShopType() { Id = 3, Name = "製麺所" });
+
+            int numberOfAddShopType = 0;
+            foreach (var type in shopTypes) {
+                if (await _context.ShopTypes.ContainsAsync(type) == false) {
+                    await _context.ShopTypes.AddAsync(type);
+                    numberOfAddShopType++;
+                }
+            }
+
+            if(numberOfAddShopType > 0) {
+                await _context.SaveChangesAsync();
+            }
+
+            //定休日
+            int numberOfAddRegularHoliday = 0;
+            List<RegularHoliday> regularHolidays = new List<RegularHoliday>();
+            regularHolidays.Add(new RegularHoliday() { Id = 1, Name = "日曜日" });
+            regularHolidays.Add(new RegularHoliday() { Id = 2, Name = "月曜日" });
+            regularHolidays.Add(new RegularHoliday() { Id = 3, Name = "火曜日" });
+            regularHolidays.Add(new RegularHoliday() { Id = 4, Name = "水曜日" });
+            regularHolidays.Add(new RegularHoliday() { Id = 5, Name = "木曜日" });
+            regularHolidays.Add(new RegularHoliday() { Id = 6, Name = "金曜日" });
+            regularHolidays.Add(new RegularHoliday() { Id = 7, Name = "土曜日" });
+            regularHolidays.Add(new RegularHoliday() { Id = 8, Name = "祝日" });
+
+            foreach (var holiday in regularHolidays) {
+                if (await _context.RegularHolidays.ContainsAsync(holiday) == false) {
+                    await _context.RegularHolidays.AddAsync(holiday);
+                    numberOfAddRegularHoliday++;
+                }
+            }
+
+            if(numberOfAddRegularHoliday > 0) {
+                await _context.SaveChangesAsync();
+            }
+
+            return new JsonResult(new {
+                ShopType = numberOfAddShopType,
+                RegularHoliday = numberOfAddRegularHoliday
+            });
         }
     }
 }

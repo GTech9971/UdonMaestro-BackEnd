@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace UdonMaestro_BackEnd.Service {
     /// <summary>
@@ -30,13 +29,49 @@ namespace UdonMaestro_BackEnd.Service {
                 var location = geoResponse?.response?.location?.FirstOrDefault();
 
                 if(location != null) {
-                    decimal lat = decimal.Parse(location.x);
-                    decimal lon = decimal.Parse(location.y);
+                    decimal lat = decimal.Parse(location.y);
+                    decimal lon = decimal.Parse(location.x);
                     return new Tuple<decimal, decimal>(lat, lon);
                 }
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// 2点間の緯度経度から距離を取得する
+        /// Vincenty 法らしい
+        /// </summary>
+        /// <param name="lat1"></param>
+        /// <param name="lon1"></param>
+        /// <param name="lat2"></param>
+        /// <param name="lon2"></param>
+        /// <returns></returns>
+        public double CalcDistcance(decimal lat1, decimal lon1, decimal lat2, decimal lon2) {
+            double x1 = ((double)lat1 * Math.PI) / 180;
+            double y1 = ((double)lon1 * Math.PI) / 180;
+            double x2 = ((double)lat2 * Math.PI) / 180;
+            double y2 = ((double)lon2 * Math.PI) / 180;
+
+            //地球の半径
+            const double RADIUS = 6378.137;
+
+            //差の絶対値
+            double diffY = Math.Abs((y1 - y2));
+
+            double calc1 = Math.Cos(x2) * Math.Sin(diffY);
+            double calc2 = Math.Cos(x1) * Math.Sin(x2) - Math.Sin(x1) * Math.Cos(x2) * Math.Cos(diffY);
+
+
+            //分子
+            double numerator = Math.Sqrt(Math.Pow(calc1, 2) + Math.Pow(calc2, 2));
+
+            //分母
+            double denominator = Math.Sin(x1) * Math.Sin(x2) + Math.Cos(x1) * Math.Cos(x2) * Math.Cos(diffY);
+
+            double degree = Math.Atan2(numerator, denominator);
+
+            return degree * RADIUS;
         }
 
 

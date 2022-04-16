@@ -3,19 +3,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace UdonMaestro_BackEnd.Data.Model {
     /// <summary>
-    /// 店のタイプ
+    /// 定休日
     /// </summary>
     [Index(nameof(Name))]
-    public class ShopType {
-        
+    public class RegularHoliday {
+
         [Key]
         [Required]
         public int Id { get; set; }
 
         /// <summary>
-        /// タイプ名
+        /// 曜日名
         /// </summary>
-        [Required]
         public string Name { get; set; } = null!;
     }
 }
