@@ -52,15 +52,37 @@ namespace UdonMaestro_BackEnd.Data.Model {
         public ICollection<ShopRegularHoliday>? RegularHolidays { get; set; } = null!;
 
         /// <summary>
-        /// 住所ID
+        /// 住所 番地
         /// </summary>
-        [ForeignKey(nameof(Address))]
-        public int AddressId { get; set; }
+        public string AddressLine { get; set; } = null!;
 
         /// <summary>
-        /// 住所
+        /// 緯度
         /// </summary>
-        public Address? Address { get; set; } = null!;
+        [Column(TypeName = "decimal(7,4)")]
+        public decimal Lat { get; set; }
+
+        /// <summary>
+        /// 経度
+        /// </summary>
+        [Column(TypeName = "decimal(7,4)")]
+        public decimal Lon { get; set; }
+
+        /// <summary>
+        /// 郵便番号
+        /// </summary>
+        public string PostCode { get; set; } = null!;
+
+        /// <summary>
+        /// 町・群ID
+        /// </summary>
+        [ForeignKey(nameof(Town))]
+        public int TownId { get; set; }
+
+        /// <summary>
+        /// 町・群
+        /// </summary>
+        public Town? Town { get; set; } = null!;
 
         /// <summary>
         /// 電話番号

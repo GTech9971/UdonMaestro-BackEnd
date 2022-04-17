@@ -165,7 +165,7 @@ namespace UdonMaestro_BackEnd.Controllers {
         /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult> ImportMaster() {
-            if(_env.IsDevelopment() == false) {
+            if (_env.IsDevelopment() == false) {
                 throw new SecurityException("Not allowed");
             }
 
@@ -183,7 +183,7 @@ namespace UdonMaestro_BackEnd.Controllers {
                 }
             }
 
-            if(numberOfAddShopType > 0) {
+            if (numberOfAddShopType > 0) {
                 await _context.SaveChangesAsync();
             }
 
@@ -206,13 +206,50 @@ namespace UdonMaestro_BackEnd.Controllers {
                 }
             }
 
-            if(numberOfAddRegularHoliday > 0) {
+            if (numberOfAddRegularHoliday > 0) {
                 await _context.SaveChangesAsync();
             }
 
             return new JsonResult(new {
                 ShopType = numberOfAddShopType,
                 RegularHoliday = numberOfAddRegularHoliday
+            });
+        }
+
+
+        [HttpGet]
+        public async Task<ActionResult> ImportShops() {
+            if (_env.IsDevelopment() == false) {
+                throw new SecurityException("Not allowed");
+            }
+
+            List<Shop> shops = new List<Shop>();
+            shops.Add(new Shop() {
+                Id = 100,
+                Name = "根っこ",
+                ShopTypeId = 1,
+                Comment = "test",
+                StartTime = TimeOnly.Parse("09:00:00"),
+                EndTime = TimeOnly.Parse("15:00:00"),
+            });
+
+
+            int numberOfShop = 0;
+            foreach (var shop in shops) {
+                if (await _context.Shops.ContainsAsync(shop)) {
+                    continue;
+                }
+
+                await _context.Shops.AddAsync(shop);
+                numberOfShop++;
+            }
+
+            if (numberOfShop > 0) {
+                await _context.SaveChangesAsync();
+            }
+
+            return new JsonResult(new {
+                Shops = numberOfShop
             });
         }
     }

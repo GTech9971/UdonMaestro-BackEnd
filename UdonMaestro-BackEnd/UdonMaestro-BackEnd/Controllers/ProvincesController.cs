@@ -24,7 +24,7 @@ namespace UdonMaestro_BackEnd.Controllers {
         [HttpGet]
         public async Task<ActionResult<PaginationResult<Province>>> GetProvinces(int pageIndex = 0, int pageSize = 10) {
             return await PaginationResult<Province>.CreateAsync(
-                _context.Provinces.AsNoTracking(),
+                _context.Provinces.AsNoTracking().Include(c => c.Cities),
                 pageIndex,
                 pageSize);
         }

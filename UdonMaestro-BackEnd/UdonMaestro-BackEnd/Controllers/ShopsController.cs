@@ -3,16 +3,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UdonMaestro_BackEnd.Data;
 using UdonMaestro_BackEnd.Data.Model;
+using UdonMaestro_BackEnd.Service;
 
 namespace UdonMaestro_BackEnd.Controllers {
     [Route("api/[controller]/[action]")]
     [ApiController]
     public class ShopsController : ControllerBase {
 
-        private readonly ApplicationDbContext _context;        
+        private readonly ApplicationDbContext _context;
+        private readonly GeoService geoService;
 
         public ShopsController(ApplicationDbContext context) {
-            _context = context;            
+            _context = context;
+            geoService = new GeoService();
         }
 
         /// <summary>
@@ -22,7 +25,7 @@ namespace UdonMaestro_BackEnd.Controllers {
         /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<Shop?>> GetShop(int id) {
-            return await _context.Shops.AsNoTracking().FirstOrDefaultAsync(x =>  x.Id == id);
+            return await _context.Shops.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         }
 
         /// <summary>
@@ -35,6 +38,42 @@ namespace UdonMaestro_BackEnd.Controllers {
         public async Task<PaginationResult<Shop>> GetShops(int pageIndex = 0, int pageSize = 10) {
             return await PaginationResult<Shop>.CreateAsync(
                 _context.Shops.AsNoTracking(),
+                pageIndex,
+                pageSize);
+        }
+
+        /// <summary>
+        /// 10km圏内にある店舗を取得する
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<List<Shop>> GetShopsAround10km(decimal lat, decimal lon) {
+            var shops = await _context.Shops.AsNoTracking().Include(s => s.Town).ToListAsync();
+            List<Shop> list = new List<Shop>();
+            foreach (var shop in shops) {
+                if (shop.Lat == 0 || shop.Lon == 0) {
+                    continue;
+                }
+                if (geoService.CalcDistcance(lat, lon, shop.Lat, shop.Lon) < 10) {
+                    list.Add(shop);
+                }
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// 町・群にある店舗リストを取得する
+        /// </summary>
+        /// <param name="townId">町・群ID</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<PaginationResult<Shop>> GetShopsInTown(int townId, int pageIndex = 0, int pageSize = 10) {
+            return await PaginationResult<Shop>.CreateAsync(
+                _context.Shops.AsNoTracking().Where(x => x.TownId == townId).Include(s => s.Town),
                 pageIndex,
                 pageSize);
         }
@@ -66,7 +105,7 @@ namespace UdonMaestro_BackEnd.Controllers {
         /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult> PostShop(Shop shop) {
-            if(await IsValidShopAsync(shop) == false) {
+            if (await IsValidShopAsync(shop) == false) {
                 return BadRequest();
             }
 

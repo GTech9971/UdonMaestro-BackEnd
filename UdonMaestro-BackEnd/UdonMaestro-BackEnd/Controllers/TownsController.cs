@@ -28,17 +28,17 @@ namespace UdonMaestro_BackEnd.Controllers {
         /// <exception cref="SecurityException"></exception>
         [HttpGet]
         public async Task<ActionResult> RefreshLatLon() {
-            if(_env.IsDevelopment() == false) {
+            if (_env.IsDevelopment() == false) {
                 throw new SecurityException("Not allowed");
             }
 
             int numberOfUpdateTown = 0;
             var towns = await _context.Towns.ToListAsync();
-            foreach(var town in towns) {
-                if(town.Lat == 0 || town.Lon == 0) {
+            foreach (var town in towns) {
+                if (town.Lat == 0 || town.Lon == 0) {
                     var info = await geoService.GetGeoByPostCodeAsync(town.PostCode);
                     Thread.Sleep(100);
-                    if(info != null) {
+                    if (info != null) {
                         town.Lat = info.Item1;
                         town.Lon = info.Item2;
                         _context.Towns.Update(town);
@@ -47,12 +47,12 @@ namespace UdonMaestro_BackEnd.Controllers {
                 }
             }
 
-            if(numberOfUpdateTown > 0) {
+            if (numberOfUpdateTown > 0) {
                 await _context.SaveChangesAsync();
             }
 
             return new JsonResult(new {
-                Towns=numberOfUpdateTown
+                Towns = numberOfUpdateTown
             });
         }
 
@@ -75,7 +75,9 @@ namespace UdonMaestro_BackEnd.Controllers {
         [HttpGet]
         public async Task<ActionResult<PaginationResult<Town>>> GetTowns(int pageIndex = 0, int pageSize = 10) {
             return await PaginationResult<Town>.CreateAsync(
-                _context.Towns.AsNoTracking(),
+                _context.Towns.AsNoTracking()
+                .Include(t => t.City)
+                .ThenInclude(c => c.Province),
                 pageIndex,
                 pageSize);
         }
